@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f8dfe6">
+  <title>For My Dear — A Folded Heart Letter</title>
+
+  <style>
+    :root {
+      --bg-a: #fdf3f6;
+      --bg-b: #f6dce5;
+      --bg-c: #fbe9ee;
+
+      --paper: #fffaf6;
+      --paper-warm: #fff5ef;
+      --paper-shadow: rgba(110, 58, 75, 0.17);
+      --paper-shadow-deep: rgba(92, 47, 64, 0.22);
+      --ink: #5b3c47;
+      --ink-soft: #8c6b76;
+      --accent: #b56b80;
+
+      --closed-duration: 1.42s;
+      --content-duration: 560ms;
+      --lift-distance: 8px;
+      --outer-travel: 31%;
+      --fold-angle: 12deg;
+
+      --card-width: min(92vw, 1040px);
+      --card-height: min(67vh, 520px);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+    }
+
+    body {
+      min-height: 100%;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.62), transparent 38%),
+        radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.28), transparent 30%),
+        linear-gradient(145deg, var(--bg-a), var(--bg-b) 53%, var(--bg-c));
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at center, transparent 42%, rgba(121, 71, 88, 0.06) 100%);
+    }
+
+    .scene {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      perspective: 1800px;
+    }
+
+    .card-stage {
+      position: relative;
+      width: var(--card-width);
+      height: var(--card-height);
+      min-height: 310px;
+      aspect-ratio: 1040 / 520;
+      isolation: isolate;
+      transform-style: preserve-3d;
+    }
+
+    .card-stage::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -7%;
+      width: 74%;
+      height: 15%;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: rgba(107, 55, 73, 0.16);
+      filter: blur(28px);
+      opacity: 0.52;
+      transition: opacity 520ms ease, transform 820ms ease;
+      z-index: -2;
+      pointer-events: none;
+    }
+
+    .card-shell {
+      position: absolute;
+      inset: 0;
+      transform-style: preserve-3d;
+      transition: transform 520ms cubic-bezier(.22, .78, .22, 1);
+    }
+
+    .card-shell.closed:hover {
+      transform: translateY(calc(var(--lift-distance) * -1));
+    }
+
+    .card-stage.opening .card-shell,
+    .card-stage.open .card-shell {
+      transform: translateY(-2px);
+    }
+
+    .card-stage.open .card-stage::after {
+      opacity: 0.28;
+    }
+
+    /* The open sheet sits behind the folded heart. Its end curves preserve
+       the organic identity of the original heart rather than becoming a
+       generic hard-edged rectangle. */
+    .open-sheet {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      overflow: hidden;
+      clip-path: polygon(
+        5% 4%,
+        13% 0%,
+        34% 0%,
+        50% 0%,
+        66% 0%,
+        87% 0%,
+        95% 4%,
+        100% 14%,
+        98% 25%,
+        94% 35%,
+        91% 50%,
+        94% 65%,
+        98% 75%,
+        100% 86%,
+        95% 96%,
+        87% 100%,
+        66% 100%,
+        50% 100%,
+        34% 100%,
+        13% 100%,
+        5% 96%,
+        0% 86%,
+        2% 75%,
+        6% 65%,
+        9% 50%,
+        6% 35%,
+        2% 25%,
+        0% 14%
+      );
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.72), transparent 25%, rgba(235,205,194,.12) 100%),
+        var(--paper-warm);
+      box-shadow:
+        0 26px 42px var(--paper-shadow),
+        0 8px 17px rgba(105, 61, 75, 0.10),
+        inset 0 0 0 1px rgba(163, 119, 126, 0.12);
+      opacity: 0;
+      transform: scale(0.975);
+      transition:
+        opacity 720ms cubic-bezier(.22,.68,.28,1),
+        transform 980ms cubic-bezier(.22,.72,.2,1);
+      pointer-events: none;
+    }
+
+    .open-sheet::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.46;
+      background:
+        repeating-linear-gradient(
+          0deg,
+          rgba(115, 76, 83, 0.018) 0px,
+          rgba(115, 76, 83, 0.018) 1px,
+          transparent 1px,
+          transparent 4px
+        ),
+        repeating-linear-gradient(
+          90deg,
+          rgba(255,255,255,0.18) 0px,
+          rgba(255,255,255,0.18) 1px,
+          transparent 1px,
+          transparent 5px
+        );
+      mix-blend-mode: multiply;
+    }
+
+    .open-sheet::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 4%;
+      width: 1px;
+      height: 92%;
+      transform: translateX(-50%);
+      background: linear-gradient(
+        to bottom,
+        transparent,
+        rgba(133, 94, 102, 0.10) 14%,
+        rgba(133, 94, 102, 0.06) 50%,
+        rgba(133, 94, 102, 0.10) 86%,
+        transparent
+      );
+      opacity: 0;
+      transition: opacity 420ms ease 620ms;
+    }
+
+    .paper-half {
+      position: absolute;
+      top: 0;
+      width: 50%;
+      height: 100%;
+      z-index: 4;
+      transform-style: preserve-3d;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      will-change: transform, filter;
+      filter: drop-shadow(0 18px 22px rgba(100, 58, 73, 0.16));
+      transition:
+        transform var(--closed-duration) cubic-bezier(.18, .78, .17, 1),
+        filter var(--closed-duration) cubic-bezier(.18, .78, .17, 1);
+      background:
+        linear-gradient(115deg, rgba(255,255,255,.76), transparent 27%),
+        linear-gradient(315deg, rgba(218,171,173,.10), transparent 42%),
+        var(--paper);
+    }
+
+    .paper-half.left {
+      left: 0;
+      transform-origin: 100% 50%;
+      clip-path: polygon(
+        100% 11%,
+        96% 7%,
+        91% 4%,
+        84% 2%,
+        76% 1%,
+        67% 2%,
+        58% 5%,
+        50% 10%,
+        44% 17%,
+        41% 25%,
+        41% 34%,
+        44% 42%,
+        49% 49%,
+        56% 58%,
+        63% 68%,
+        68% 78%,
+        62% 89%,
+        56% 100%,
+        49% 100%,
+        43% 94%,
+        37% 86%,
+        31% 77%,
+        24% 67%,
+        17% 57%,
+        11% 47%,
+        6% 37%,
+        3% 28%,
+        3% 20%,
+        6% 13%,
+        12% 7%,
+        19% 3%,
+        28% 1%,
+        37% 1%,
+        46% 3%,
+        54% 6%,
+        61% 11%,
+        67% 17%,
+        72% 25%,
+        75% 35%,
+        78% 47%,
+        79% 61%,
+        76% 74%,
+        70% 88%,
+        62% 100%,
+        56% 100%,
+        56% 100%
+      );
+    }
+
+    .paper-half.right {
+      right: 0;
+      transform-origin: 0% 50%;
+      clip-path: polygon(
+        0% 11%,
+        4% 7%,
+        9% 4%,
+        16% 2%,
+        24% 1%,
+        33% 2%,
+        42% 5%,
+        50% 10%,
+        56% 17%,
+        59% 25%,
+        59% 34%,
+        56% 42%,
+        51% 49%,
+        44% 58%,
+        37% 68%,
+        32% 78%,
+        38% 89%,
+        44% 100%,
+        51% 100%,
+        57% 94%,
+        63% 86%,
+        69% 77%,
+        76% 67%,
+        83% 57%,
+        89% 47%,
+        94% 37%,
+        97% 28%,
+        97% 20%,
+        94% 13%,
+        88% 7%,
+        81% 3%,
+        72% 1%,
+        63% 1%,
+        54% 3%,
+        46% 6%,
+        39% 11%,
+        33% 17%,
+        28% 25%,
+        25% 35%,
+        22% 47%,
+        21% 61%,
+        24% 74%,
+        30% 88%,
+        38% 100%,
+        44% 100%,
+        44% 100%
+      );
+    }
+
+    /* The two halves are pulled outward and subtly tipped in 3D. */
+    .card-stage.opening .paper-half.left,
+    .card-stage.open .paper-half.left {
+      transform: translateX(calc(var(--outer-travel) * -1)) rotateY(calc(var(--fold-angle) * -1)) rotateZ(-0.35deg);
+      filter: drop-shadow(0 16px 22px rgba(100, 58, 73, 0.14));
+    }
+
+    .card-stage.opening .paper-half.right,
+    .card-stage.open .paper-half.right {
+      transform: translateX(var(--outer-travel)) rotateY(var(--fold-angle)) rotateZ(0.35deg);
+      filter: drop-shadow(0 16px 22px rgba(100, 58, 73, 0.14));
+    }
+
+    .paper-half::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        repeating-linear-gradient(
+          0deg,
+          rgba(115, 76, 83, 0.018) 0px,
+          rgba(115, 76, 83, 0.018) 1px,
+          transparent 1px,
+          transparent 4px
+        ),
+        linear-gradient(90deg, rgba(255,255,255,.40), transparent 44%, rgba(160,106,116,.08));
+      opacity: 0.54;
+      mix-blend-mode: multiply;
+    }
+
+    .paper-half.left::after,
+    .paper-half.right::after {
+      content: "";
+      position: absolute;
+      top: 3%;
+      bottom: 3%;
+      width: 5%;
+      pointer-events: none;
+      opacity: 0.25;
+      transition: opacity 420ms ease;
+    }
+
+    .paper-half.left::after {
+      right: 0;
+      background: linear-gradient(90deg, transparent, rgba(106, 66, 79, .26));
+    }
+
+    .paper-half.right::after {
+      left: 0;
+      background: linear-gradient(270deg, transparent, rgba(106, 66, 79, .26));
+    }
+
+    /* A very soft hinge/shadow at the exact fold keeps the closed heart
+       visually continuous while preserving the physical-paper cue. */
+    .card-stage[data-state="closed"] .paper-half.left,
+    .card-stage[data-state="closed"] .paper-half.right {
+      filter: drop-shadow(0 15px 21px rgba(100, 58, 73, 0.15));
+    }
+
+    .card-stage[data-state="closed"] .paper-half.left::after {
+      right: -1px;
+      opacity: 0.22;
+    }
+
+    .card-stage[data-state="closed"] .paper-half.right::after {
+      left: -1px;
+      opacity: 0.22;
+    }
+
+    .crease {
+      position: absolute;
+      z-index: 7;
+      left: 50%;
+      top: 7%;
+      width: 2px;
+      height: 86%;
+      transform: translateX(-50%);
+      background: linear-gradient(
+        to bottom,
+        transparent,
+        rgba(117, 71, 87, .26) 15%,
+        rgba(117, 71, 87, .19) 50%,
+        rgba(117, 71, 87, .26) 85%,
+        transparent
+      );
+      box-shadow:
+        1px 0 rgba(255,255,255,.55),
+        -1px 0 rgba(104, 61, 76, .05);
+      opacity: 0.8;
+      transition:
+        opacity 520ms ease,
+        width 420ms ease,
+        filter 420ms ease;
+      pointer-events: none;
+    }
+
+    .closed-front {
+      position: absolute;
+      z-index: 9;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+      transition:
+        opacity 580ms ease,
+        transform 700ms cubic-bezier(.2,.75,.2,1),
+        filter 580ms ease;
+    }
+
+    .closed-front__inner {
+      transform: translateY(2%);
+      text-align: center;
+      filter: drop-shadow(0 5px 9px rgba(103, 62, 77, .10));
+    }
+
+    .closed-front__title {
+      margin: 0;
+      font-size: clamp(26px, 3.2vw, 43px);
+      font-weight: 600;
+      font-style: italic;
+      letter-spacing: .02em;
+      color: #684652;
+    }
+
+    .closed-front__hint {
+      margin: 12px 0 0;
+      font-family: "Trebuchet MS", Arial, sans-serif;
+      font-size: clamp(11px, 1.2vw, 15px);
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+    }
+
+    .closed-front__heart {
+      display: inline-block;
+      margin-left: .22em;
+      color: var(--accent);
+      transform: translateY(1px);
+    }
+
+    .inner-content {
+      position: absolute;
+      z-index: 5;
+      left: 12%;
+      right: 12%;
+      top: 13%;
+      bottom: 12%;
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      overflow: auto;
+      padding: 2.4% 6%;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(12px);
+      filter: blur(4px);
+      pointer-events: none;
+      transition:
+        opacity var(--content-duration) ease,
+        transform var(--content-duration) cubic-bezier(.2,.75,.2,1),
+        filter var(--content-duration) ease;
+    }
+
+    .inner-content h1 {
+      margin: 0 0 15px;
+      font-size: clamp(24px, 3vw, 40px);
+      line-height: 1.08;
+      font-weight: 600;
+      font-style: italic;
+      letter-spacing: .01em;
+      color: #5d3b47;
+    }
+
+    .inner-content p {
+      max-width: 700px;
+      margin: 6px auto;
+      font-size: clamp(14px, 1.35vw, 19px);
+      line-height: 1.65;
+      color: #6f525c;
+    }
+
+    .inner-content .signature {
+      margin-top: 18px;
+      font-size: clamp(15px, 1.45vw, 20px);
+      font-style: italic;
+      color: #805260;
+    }
+
+    .card-stage.opening .open-sheet,
+    .card-stage.open .open-sheet {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .card-stage.opening .closed-front {
+      opacity: 0.18;
+      transform: translateY(-7px) scale(.985);
+      filter: blur(1.4px);
+    }
+
+    .card-stage.open .closed-front {
+      opacity: 0;
+      transform: translateY(-10px) scale(.98);
+      filter: blur(2px);
+    }
+
+    .card-stage.open .crease {
+      opacity: 0.12;
+      width: 1px;
+      filter: blur(.2px);
+    }
+
+    .card-stage.opening .inner-content {
+      /* present but still visually hidden until the fold is nearly finished */
+      transition-delay: 990ms;
+    }
+
+    .card-stage.open .inner-content {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
+      transition-delay: 0ms;
+      pointer-events: auto;
+    }
+
+    .close-button {
+      position: absolute;
+      z-index: 15;
+      right: 1.8%;
+      bottom: 2.8%;
+      border: 1px solid rgba(133, 92, 104, .22);
+      border-radius: 999px;
+      padding: 8px 14px;
+      background: rgba(255, 250, 246, .72);
+      color: #795462;
+      font-family: "Trebuchet MS", Arial, sans-serif;
+      font-size: 12px;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+      box-shadow: 0 7px 16px rgba(100, 58, 73, .10);
+      backdrop-filter: blur(8px);
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(6px);
+      pointer-events: none;
+      transition:
+        opacity 420ms ease,
+        transform 420ms ease,
+        background-color 180ms ease;
+    }
+
+    .close-button:hover {
+      background: rgba(255, 255, 255, .88);
+    }
+
+    .close-button:focus-visible,
+    .card-shell:focus-visible {
+      outline: 2px solid rgba(181, 107, 128, .58);
+      outline-offset: 5px;
+    }
+
+    .card-stage.open .close-button {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+      transition-delay: 880ms;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 700px) {
+      :root {
+        --card-width: 94vw;
+        --card-height: 42vh;
+        --outer-travel: 27%;
+      }
+
+      .scene {
+        padding: 14px;
+      }
+
+      .card-stage {
+        min-height: 270px;
+      }
+
+      .inner-content {
+        left: 9%;
+        right: 9%;
+        top: 10%;
+        bottom: 10%;
+        padding: 3% 5%;
+      }
+
+      .inner-content p {
+        line-height: 1.5;
+      }
+
+      .closed-front__hint {
+        margin-top: 8px;
+        letter-spacing: .12em;
+      }
+
+      .close-button {
+        right: 4%;
+        bottom: 3.8%;
+      }
+    }
+
+    @media (max-width: 420px) {
+      :root {
+        --card-height: 36vh;
+        --outer-travel: 24%;
+      }
+
+      .card-stage {
+        min-height: 235px;
+      }
+
+      .inner-content {
+        left: 7%;
+        right: 7%;
+        top: 9%;
+        bottom: 9%;
+      }
+
+      .inner-content h1 {
+        margin-bottom: 9px;
+      }
+
+      .inner-content p {
+        margin: 4px auto;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      :root {
+        --closed-duration: 1ms;
+        --content-duration: 1ms;
+      }
+
+      .card-shell,
+      .paper-half,
+      .open-sheet,
+      .closed-front,
+      .inner-content,
+      .crease,
+      .close-button {
+        transition-duration: 1ms !important;
+        transition-delay: 0ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="scene" aria-label="Romantic folded heart letter">
+    <div
+      class="card-stage"
+      id="cardStage"
+      data-state="closed"
+    >
+      <div
+        class="card-shell"
+        id="cardShell"
+        role="button"
+        tabindex="0"
+        aria-label="Open the folded heart letter"
+        aria-expanded="false"
+      >
+        <div class="open-sheet" aria-hidden="true"></div>
+
+        <div class="paper-half left" aria-hidden="true"></div>
+        <div class="paper-half right" aria-hidden="true"></div>
+
+        <div class="crease" aria-hidden="true"></div>
+
+        <!-- Edit the closed-cover text directly here. -->
+        <div class="closed-front" aria-hidden="false">
+          <div class="closed-front__inner">
+            <p class="closed-front__title">For My Dear BUBU</p>
+            <p class="closed-front__hint">Tap to open <span class="closed-front__heart">♡</span></p>
+          </div>
+        </div>
+
+        <!-- Edit the open-letter text directly here. -->
+        <article class="inner-content" aria-live="polite">
+          <h1>A Little Something For You</h1>
+          <p>
+         I am missing your presence a lot baby, i don't feel nice without you jaan☹️
+I lovee you betuu, pls jldi se aake meri servicing krdo.
+
+
+          </p>
+          <p>
+           
+          </p>
+          <p>
+           
+          </p>
+          <p class="signature">Yours tingu Baby</p>
+        </article>
+
+        <button
+          class="close-button"
+          id="closeButton"
+          type="button"
+          aria-label="Fold the letter closed"
+        >
+          Close ↩
+        </button>
+
+        <span class="sr-only" id="statusText">The heart letter is closed.</span>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      const stage = document.getElementById("cardStage");
+      const shell = document.getElementById("cardShell");
+      const closeButton = document.getElementById("closeButton");
+      const statusText = document.getElementById("statusText");
+
+      let state = "closed";
+      let transitionTimer = null;
+
+      const setState = (nextState) => {
+        state = nextState;
+        stage.dataset.state = nextState;
+        stage.classList.remove("closed", "opening", "open", "closing");
+        stage.classList.add(nextState);
+
+        const isOpen = nextState === "open" || nextState === "opening";
+        shell.setAttribute("aria-expanded", String(isOpen));
+        shell.setAttribute(
+          "aria-label",
+          isOpen ? "Fold the letter closed" : "Open the folded heart letter"
+        );
+
+        if (nextState === "open") {
+          statusText.textContent = "The heart letter is open.";
+        } else if (nextState === "closing") {
+          statusText.textContent = "The heart letter is closing.";
+        } else if (nextState === "opening") {
+          statusText.textContent = "The heart letter is opening.";
+        } else {
+          statusText.textContent = "The heart letter is closed.";
+        }
+      };
+
+      const openLetter = () => {
+        if (state !== "closed") return;
+
+        clearTimeout(transitionTimer);
+        setState("opening");
+
+        transitionTimer = setTimeout(() => {
+          setState("open");
+        }, 1460);
+      };
+
+      const closeLetter = () => {
+        if (state !== "open") return;
+
+        clearTimeout(transitionTimer);
+        setState("closing");
+
+        transitionTimer = setTimeout(() => {
+          setState("closed");
+        }, 1460);
+      };
+
+      shell.addEventListener("click", (event) => {
+        if (event.target.closest("#closeButton")) return;
+        if (state === "closed") openLetter();
+        else if (state === "open") closeLetter();
+      });
+
+      shell.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+
+        event.preventDefault();
+
+        if (state === "closed") openLetter();
+        else if (state === "open") closeLetter();
+      });
+
+      closeButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        closeLetter();
+      });
+
+      /* Keep the paper visually centered when the viewport changes. */
+      const recenterOnViewportChange = () => {
+        document.documentElement.style.setProperty(
+          "--vh",
+          `${window.innerHeight * 0.01}px`
+        );
+      };
+
+      window.addEventListener("resize", recenterOnViewportChange, { passive: true });
+      recenterOnViewportChange();
+
+      window.addEventListener("pagehide", () => clearTimeout(transitionTimer));
+    })();
+  </script>
+</body>
+</html>
